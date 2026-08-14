@@ -2,14 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
@@ -20,59 +12,128 @@ export function UpdatePasswordForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
+
     setError(null);
 
+    if (password !== repeatPassword) {
+      setError("A két jelszó nem egyezik.");
+      return;
+    }
+
+    const supabase = createClient();
+
+    setIsLoading(true);
+
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Hiba történt a jelszó módosítása során."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-          <CardDescription>
-            Please enter your new password below.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleForgotPassword}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="password">New password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="New password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save new password"}
-              </Button>
+    <div
+      className={cn("relative flex flex-col gap-6", className)}
+      {...props}
+    >
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-1/4 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="absolute right-0 top-1/2 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-3xl" />
+      </div>
+
+      <div className="text-center">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-purple-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
+          PHOTO RANKING
+        </div>
+
+        <h1 className="mt-5 text-3xl font-bold tracking-tight">
+          Új jelszó beállítása
+        </h1>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          Állítsd be az új jelszavadat a fiókodhoz.
+        </p>
+      </div>
+
+      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-purple-950/20 backdrop-blur-xl sm:p-8">
+        <form onSubmit={handleUpdatePassword}>
+          <div className="flex flex-col gap-5">
+            <div className="grid gap-2">
+              <Label htmlFor="password">
+                Új jelszó
+              </Label>
+
+              <Input
+                id="password"
+                type="password"
+                placeholder="Új jelszó"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11 border-white/10 bg-black/20 transition focus:border-purple-500/50 focus:ring-purple-500/20"
+              />
             </div>
-          </form>
-        </CardContent>
-      </Card>
+
+            <div className="grid gap-2">
+              <Label htmlFor="repeat-password">
+                Jelszó megerősítése
+              </Label>
+
+              <Input
+                id="repeat-password"
+                type="password"
+                placeholder="Jelszó újra"
+                required
+                value={repeatPassword}
+                onChange={(e) =>
+                  setRepeatPassword(e.target.value)
+                }
+                className="h-11 border-white/10 bg-black/20 transition focus:border-purple-500/50 focus:ring-purple-500/20"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="h-11 w-full rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:from-purple-500 hover:to-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading
+                ? "Jelszó mentése..."
+                : "Új jelszó mentése →"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <p className="text-center text-xs text-muted-foreground/60">
+        Photo Ranking · Zsűri platform
+      </p>
     </div>
   );
 }
