@@ -17,6 +17,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import ImageLightbox from "@/components/photo-ranking/image-lightbox";
 
 type RankingImage = {
   id: number;
@@ -33,12 +34,14 @@ type SortableImageProps = {
   image: RankingImage;
   index: number;
   disabled: boolean;
+  onImageClick: (image: RankingImage) => void;
 };
 
 function SortableImage({
   image,
   index,
   disabled,
+  onImageClick,
 }: SortableImageProps) {
   const {
     attributes,
@@ -110,16 +113,29 @@ function SortableImage({
       </div>
 
       {image.signedUrl ? (
-        <img
-          src={image.signedUrl}
-          alt={`${index + 1}. helyezett kép`}
-          draggable={false}
-          loading={index < 6 ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={index < 3 ? "high" : "low"}
-          onContextMenu={(event) => event.preventDefault()}
-          className="aspect-square w-full select-none object-cover pointer-events-none"
-        />
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onTouchStart={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onImageClick(image);
+          }}
+          className="block w-full cursor-zoom-in"
+          aria-label={`${index + 1}. helyezett kép megnyitása nagyban`}
+        >
+          <img
+            src={image.signedUrl}
+            alt={`${index + 1}. helyezett kép`}
+            draggable={false}
+            loading={index < 6 ? "eager" : "lazy"}
+            decoding="async"
+            fetchPriority={index < 3 ? "high" : "low"}
+            onContextMenu={(event) => event.preventDefault()}
+            className="aspect-square w-full select-none object-cover"
+          />
+        </button>
       ) : (
         <div className="flex aspect-square items-center justify-center text-sm text-muted-foreground">
           A kép nem tölthető be
@@ -144,6 +160,9 @@ export default function RankingBoard({
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [checkingVote, setCheckingVote] = useState(true);
+  const [lightboxImage, setLightboxImage] = useState<RankingImage | null>(
+    null
+  );
 
   const supabase = createClient();
 
@@ -374,6 +393,7 @@ export default function RankingBoard({
                   image={image}
                   index={index}
                   disabled={boardDisabled}
+                  onImageClick={setLightboxImage}
                 />
               ))}
             </div>
@@ -412,6 +432,14 @@ export default function RankingBoard({
           </button>
         )}
       </div>
+
+      {lightboxImage?.signedUrl && (
+        <ImageLightbox
+          imageUrl={lightboxImage.signedUrl}
+          alt="Nagyított kép"
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </div>
   );
 }
