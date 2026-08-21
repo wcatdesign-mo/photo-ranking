@@ -312,15 +312,27 @@ export default async function ProtectedPage() {
                       </p>
                     </div>
 
-                    <Link
-                      href={`/protected/challenges/${challenge.id}`}
-                      className="inline-flex items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 font-medium text-purple-200 transition hover:border-purple-400/50 hover:bg-purple-500/20"
-                    >
-                      Kezelés
-                      <span className="ml-2 transition-transform group-hover:translate-x-1">
-                        →
-                      </span>
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                      <Link
+                        href={`/rank/${challenge.id}`}
+                        className="inline-flex items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 font-medium text-purple-200 transition hover:border-purple-400/50 hover:bg-purple-500/20"
+                      >
+                        🗳️ Szavazás
+                        <span className="ml-2 transition-transform group-hover:translate-x-1">
+                          →
+                        </span>
+                      </Link>
+
+                      <Link
+                        href={`/protected/challenges/${challenge.id}`}
+                        className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 font-medium transition hover:border-purple-500/30 hover:bg-white/[0.06]"
+                      >
+                        Kezelés
+                        <span className="ml-2 transition-transform group-hover:translate-x-1">
+                          →
+                        </span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}
