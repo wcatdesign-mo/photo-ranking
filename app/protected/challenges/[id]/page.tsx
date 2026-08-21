@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import ImageUploader from "@/components/photo-ranking/image-uploader";
 import DeleteImageButton from "@/components/photo-ranking/delete-image-button";
 import ChallengeStatusButton from "@/components/photo-ranking/challenge-status-button";
+import DeleteJuryVoteButton from "@/components/photo-ranking/delete-jury-vote-button";
 
 export const instant = false;
 
@@ -80,6 +81,18 @@ export default async function ChallengePage({
     console.error(
       "Hiba a zsűri állapotának lekérésekor:",
       voteStatusError
+    );
+  }
+
+  const { data: juryStatus, error: juryStatusError } =
+    await supabase.rpc("admin_get_challenge_jury_status", {
+      p_challenge_id: Number(id),
+    });
+
+  if (juryStatusError) {
+    console.error(
+      "Hiba a zsűritagok állapotának lekérésekor:",
+      juryStatusError
     );
   }
 
@@ -290,6 +303,75 @@ export default async function ChallengePage({
               />
             </div>
           </div>
+
+          {/* Zsűritagok szavazási állapota */}
+          <section className="mt-8 max-w-4xl">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-sm backdrop-blur">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  🧑‍⚖️ Zsűritagok
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ezen a szavazáson leadott szavazatok kezelése.
+                </p>
+              </div>
+
+              <div className="mt-5 divide-y divide-white/10">
+                {(juryStatus ?? []).length === 0 ? (
+                  <p className="py-4 text-sm text-muted-foreground">
+                    Nincs regisztrált zsűritag.
+                  </p>
+                ) : (
+                  (juryStatus ?? []).map(
+                    (jury: {
+                      user_id: string;
+                      name: string | null;
+                      email: string | null;
+                      has_voted: boolean;
+                    }) => (
+                      <div
+                        key={jury.user_id}
+                        className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {jury.name || "Névtelen felhasználó"}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {jury.email || "Nincs e-mail cím"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {jury.has_voted ? (
+                            <>
+                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+                                ✅ Leadta a szavazatát
+                              </span>
+
+                              <DeleteJuryVoteButton
+                                challengeId={Number(id)}
+                                userId={jury.user_id}
+                                userName={
+                                  jury.name ||
+                                  jury.email ||
+                                  "ezt a zsűritagot"
+                                }
+                              />
+                            </>
+                          ) : (
+                            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-medium text-muted-foreground">
+                              ⏳ Még nem szavazott
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )
+                )}
+              </div>
+            </div>
+          </section>
 
           {/* Eredménylista */}
           {voteCount === 0 ? (
