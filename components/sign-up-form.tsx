@@ -12,6 +12,9 @@ export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const [username, setUsername] = useState("");
+  const [avatar, setAvatar] = useState("");
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -28,6 +31,18 @@ export function SignUpForm({
     setIsLoading(true);
     setError(null);
 
+    if (!username.trim()) {
+      setError("Kérjük, adj meg egy felhasználónevet.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!avatar) {
+      setError("Kérjük, válassz egy avatart.");
+      setIsLoading(false);
+      return;
+    }
+
     if (password !== repeatPassword) {
       setError("A két jelszó nem egyezik.");
       setIsLoading(false);
@@ -39,6 +54,10 @@ export function SignUpForm({
         email,
         password,
         options: {
+          data: {
+            name: username.trim(),
+            avatar,
+          },
           emailRedirectTo: `${window.location.origin}/protected`,
         },
       });
@@ -88,6 +107,144 @@ export function SignUpForm({
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-purple-950/20 backdrop-blur-xl sm:p-8">
         <form onSubmit={handleSignUp}>
           <div className="flex flex-col gap-5">
+            {/* Felhasználónév */}
+            <div className="grid gap-2">
+              <Label htmlFor="username">
+                Felhasználónév
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="pl. Mónika"
+                required
+                minLength={2}
+                maxLength={30}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="h-11 border-white/10 bg-black/20 transition focus:border-purple-500/50 focus:ring-purple-500/20"
+              />
+              <p className="text-xs text-muted-foreground">
+                Ez a név jelenik majd meg a zsűrizés és az eredmények során.
+              </p>
+            </div>
+
+            {/* Avatar választás */}
+            <div className="grid gap-3">
+              <div>
+                <Label>
+                  Avatar
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ez a karakter jelenik majd meg a zsűrizés és az eredmények során.
+                </p>
+              </div>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setAvatarOpen((current) => !current)}
+                  className={[
+                    "flex h-16 w-full items-center gap-3 rounded-xl border bg-black/20 px-3 text-left transition",
+                    avatarOpen
+                      ? "border-purple-500/60 ring-2 ring-purple-500/20"
+                      : "border-white/10 hover:border-purple-500/40",
+                  ].join(" ")}
+                  aria-expanded={avatarOpen}
+                  aria-haspopup="listbox"
+                >
+                  {avatar ? (
+                    <>
+                      <img
+                        src={`/avatars/${avatar}.png`}
+                        alt="Kiválasztott avatar"
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                      <span className="flex-1 text-sm font-medium">
+                        Avatar kiválasztva
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex-1 text-sm text-muted-foreground">
+                      Válassz egy karaktert...
+                    </span>
+                  )}
+
+                  <span
+                    className={[
+                      "text-lg text-muted-foreground transition-transform",
+                      avatarOpen ? "rotate-180" : "",
+                    ].join(" ")}
+                  >
+                    ▾
+                  </span>
+                </button>
+
+                {avatarOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 rounded-2xl border border-white/10 bg-zinc-950/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+                    <div className="mb-3 flex items-center justify-between px-1">
+                      <p className="text-sm font-medium">
+                        Válaszd ki a karakteredet
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setAvatarOpen(false)}
+                        className="text-xs text-muted-foreground hover:text-white"
+                      >
+                        Bezárás
+                      </button>
+                    </div>
+
+                    <div
+                      className="grid grid-cols-4 gap-3 sm:grid-cols-6"
+                      role="listbox"
+                      aria-label="Avatarok"
+                    >
+                      {Array.from({ length: 25 }, (_, index) => {
+                        const avatarId = `avatar-${String(index + 1).padStart(2, "0")}`;
+
+                        return (
+                          <button
+                            key={avatarId}
+                            type="button"
+                            onClick={() => {
+                              setAvatar(avatarId);
+                              setAvatarOpen(false);
+                            }}
+                            className={[
+                              "relative aspect-square overflow-hidden rounded-2xl border-2 bg-white/5 p-1 transition hover:scale-105",
+                              avatar === avatarId
+                                ? "border-purple-400 bg-purple-500/20 shadow-lg shadow-purple-500/20 ring-2 ring-purple-400/40"
+                                : "border-white/10 hover:border-purple-400/50 hover:bg-white/10",
+                            ].join(" ")}
+                            aria-label={`Avatar ${index + 1}`}
+                            aria-selected={avatar === avatarId}
+                          >
+                            <img
+                              src={`/avatars/${avatarId}.png`}
+                              alt={`Avatar ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+
+                            {avatar === avatarId && (
+                              <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white shadow">
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!avatar && (
+                <p className="text-xs text-muted-foreground">
+                  Kérjük, válassz egy karaktert.
+                </p>
+              )}
+            </div>
+
             {/* E-mail */}
             <div className="grid gap-2">
               <Label htmlFor="email">
