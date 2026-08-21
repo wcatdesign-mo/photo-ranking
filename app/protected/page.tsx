@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import DeleteChallengeButton from "@/components/photo-ranking/delete-challenge-button";
 
 export const instant = false;
 
@@ -332,6 +333,11 @@ export default async function ProtectedPage() {
                           →
                         </span>
                       </Link>
+
+                      <DeleteChallengeButton
+                        challengeId={challenge.id}
+                        challengeName={challenge.name}
+                      />
                     </div>
                   </div>
                 </div>
