@@ -68,6 +68,36 @@ export default async function ChallengePage({
     .select("image_id, position, user_id")
     .eq("challenge_id", id);
 
+  type JuryRanking = {
+    image_id: number;
+    user_id: string;
+    user_name: string | null;
+    user_avatar: string | null;
+    ranking_position: number;
+  };
+
+  const { data: juryRankingsData, error: juryRankingsError } =
+    await supabase.rpc("get_public_jury_rankings", {
+      p_challenge_id: Number(id),
+    });
+
+  if (juryRankingsError) {
+    console.error(
+      "Hiba a zsűritagok egyéni rangsorának lekérésekor:",
+      juryRankingsError
+    );
+  }
+
+  const juryRankings = (juryRankingsData ?? []) as JuryRanking[];
+
+  const juryRankingsByImage = new Map<number, JuryRanking[]>();
+
+  for (const ranking of juryRankings) {
+    const existing = juryRankingsByImage.get(ranking.image_id) ?? [];
+    existing.push(ranking);
+    juryRankingsByImage.set(ranking.image_id, existing);
+  }
+
   const voteCount = new Set(
     (rankings ?? []).map((ranking) => ranking.user_id)
   ).size;
@@ -136,6 +166,7 @@ export default async function ChallengePage({
         points,
         votes: imageRankings.length,
         positionCounts,
+        juryRankings: juryRankingsByImage.get(image.id) ?? [],
       };
     })
     .sort((a, b) => b.points - a.points);
@@ -457,6 +488,64 @@ export default async function ChallengePage({
                           ))}
                       </div>
                     </div>
+
+                    {image.juryRankings.length > 0 && (
+                      <div className="mt-4">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Zsűritagok rangsora
+                        </p>
+
+                        <div className="flex flex-wrap gap-2">
+                          {image.juryRankings
+                            .sort(
+                              (a: JuryRanking, b: JuryRanking) =>
+                                a.ranking_position - b.ranking_position
+                            )
+                            .map((jury: JuryRanking) => {
+                              let avatarSrc: string | null = null;
+
+                              if (jury.user_avatar) {
+                                if (jury.user_avatar.startsWith("/")) {
+                                  avatarSrc = jury.user_avatar;
+                                } else if (
+                                  jury.user_avatar.endsWith(".png")
+                                ) {
+                                  avatarSrc = `/avatars/${jury.user_avatar}`;
+                                } else {
+                                  avatarSrc = `/avatars/${jury.user_avatar}.png`;
+                                }
+                              }
+
+                              return (
+                                <div
+                                  key={`${image.id}-${jury.user_id}`}
+                                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1"
+                                >
+                                  {avatarSrc ? (
+                                    <img
+                                      src={avatarSrc}
+                                      alt=""
+                                      className="h-7 w-7 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs">
+                                      👤
+                                    </div>
+                                  )}
+
+                                  <span className="max-w-[140px] truncate text-xs font-medium">
+                                    {jury.user_name || "Névtelen"}
+                                  </span>
+
+                                  <span className="text-xs font-bold text-purple-300">
+                                    #{jury.ranking_position}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="shrink-0 sm:text-right">
                       <p className="text-3xl font-bold">
